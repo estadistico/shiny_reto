@@ -1,0 +1,627 @@
+---
+title: "Informe de Marketing digital 2023"
+author: "Cristian Cuevas"
+output: 
+  ioslides_presentation:
+    widescreen: true
+    incremental: true
+    css: custom.css
+date: "2023-03-04"
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+getOption("digits")
+
+```
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+
+library(readxl)
+library(dplyr)
+library(knitr)
+library(googleVis)
+library(shinydashboard)
+library(lubridate)
+library(psych)
+library(ggthemes)
+
+datos_ltv <- read_excel("Dataset - Caso ContabilidApp - Test Data Analytics.xlsx", 
+    sheet = "LTV_Usuarios")
+df <- read_excel("Dataset - Caso ContabilidApp - Test Data Analytics.xlsx", 
+    sheet = "DataSet")
+
+datos_ltv<-datos_ltv %>% group_by(Id) %>% summarise(LTV=median(LTV))
+df<-df[!duplicated(df$Id), ]
+
+datos<-merge(df,datos_ltv,by="Id",all.x = TRUE)
+
+```
+
+Introduccion - Start Up
+========================================================
+
+## Introduccion
+
+El informe se desarrolla en una primera parte haciendo enfasis en lo academico (Algo aburrido) y luego una segunda parte analizando desde el marketing digital (más amigable) usando storytelling . Iniciamos por lo academico, puede ser aburrido, pero recordemos a George Bernard Shaw
+
+"Las estadísticas son tan aburridas como la verdad, pero nos dan una idea preciosa de la realidad." - George Bernard Shaw
+
+## Caso de estudio
+
+### ContabilidadAPP
+
+La empresa Contabilidapp es una aplicación donde las empresas pueden llevar la contabilidad y organizar su información de forma que les permita tomar mejores decisiones
+
+Para conocer más de la empresa [ContabilidadAPP](http://contabilidadapp.com.html).
+
+
+## Planteamiento del Problema
+
+El problema consiste cuando la cantidad de cuentas que se creen es superior a la capacidad con la que cuenta el equipo de ventas, impidiendo brindar una atención personalizada a los usuarios en el onboarding del producto.
+
+En este sentido el problema consiste en buscar una solución que permita mejorar los porcentajes de conversión a niveles iguales o superiores a los que se manejaban hace unos meses
+
+
+## Objetivos
+
+- Analizar mediante análisis de datos el embudo de conversión.
+
+ - Plantear estrategias con el fin de mejorar los niveles de conversion y esto sean iguales o superiores a los que se manejaban hace unos meses
+
+- Identifcar un perfil de Empresa segun el tipo de cuenta
+
+
+Análisis Estadistico clasico | Analisis exploratorio de los datos (EDA)
+========================================================
+
+
+
+```{r echo=FALSE}
+
+#categprizar variables
+
+datos$`Contacto Inicial`<-as.factor(datos$`Contacto Inicial`)
+levels(datos$`Contacto Inicial`)<- c("No","Si")
+
+datos$`Persona Juridica`<- ifelse(datos$`Persona Juridica`==0,"No","Si")
+datos$`Persona Juridica`<-as.factor(datos$`Persona Juridica`)
+
+datos$`Solicita Ayuda`<- ifelse(datos$`Solicita Ayuda`==0,"No","Si")
+datos$`Solicita Ayuda`<-as.factor(datos$`Solicita Ayuda`)
+
+datos$`Interes de Compra`<-as.factor(datos$`Interes de Compra`)
+levels(datos$`Interes de Compra`)<- c("No","Si")
+
+datos$mes<-month(datos$`Fecha Registro`)
+datos$dia<-day(datos$`Fecha Registro`)
+datos$mes<-as.factor(datos$mes)
+levels(datos$mes)<-c("Ene","Feb","Marzo","Abril","Mayo","Junio","Julio","Agosto","Sep","Oct","Nov","Dic")
+
+```
+
+## Graficos: LTV vs Ubicacion
+
+
+<div style="float: left; width: 50%;">
+
+#### Total de LTV por Ubicacion
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+
+library(googleVis)
+df3= datos %>% group_by(Ubicación) %>% summarise(ltv=sum(LTV,na.rm=TRUE) ) 
+op <- options(gvis.plot.tag='chart')
+pie1<- gvisPieChart(df3)
+plot(pie1)
+  
+```
+
+</div>
+
+
+
+<div style="float: right; width: 50%;">
+
+```{r message=FALSE,warning=FALSE}
+
+library(ggcharts)
+bar_chart(data = datos, x = Ubicación) + ggtitle("Cantidad de empresas por Ubicacion ")+labs(y="Empresas")
+
+```
+</div>
+
+<div style="float: left; width: 100%;">
+
+#### Total de LTV por mes y Ubicacion
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+
+library(googleVis)
+library(tidyr)
+df1= datos %>% group_by(mes,Ubicación) %>% summarise(ltv=sum(LTV,na.rm=TRUE) ) %>% spread(key=Ubicación,value=ltv) 
+op <- options(gvis.plot.tag='chart')
+linea1<- gvisLineChart(df1)
+plot(linea1)
+
+
+```
+
+</div>
+
+## LTV vs mes
+
+<div style="float: left; width: 100%;">
+
+### Total de LTV por mes
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+#%>% spread(key=mes,value=ltv) 
+library(googleVis)
+library(tidyr)
+df10= datos %>% group_by(mes) %>% summarise(ltv=sum(LTV,na.rm=TRUE) ) 
+op <- options(gvis.plot.tag='chart')
+linea2<- gvisLineChart(df10)
+plot(linea2)
+
+
+```
+
+</div>
+
+<div style="float: left; width: 100%;">
+
+### Total de LTV por mes y persona juridica
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+
+library(googleVis)
+library(tidyr)
+df10= datos %>% group_by(mes,`Persona Juridica`) %>% summarise(ltv=sum(LTV,na.rm=TRUE) ) %>% spread(key=`Persona Juridica`,value=ltv) 
+op <- options(gvis.plot.tag='chart')
+linea2<- gvisLineChart(df10)
+plot(linea2)
+
+```
+
+</div>
+
+
+## LTV vs todos los atributo
+
+
+<div style="float: left; width: 80%;">
+
+</div>
+
+<div style="float: left; width: 55%;">
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+
+selectInput("var_select", label = "Seleccione Atributo:",
+              choices = names(datos[c(3,5,8,12,13)]), selected = names(datos[c(3)]))
+
+
+renderTable({
+
+datos %>% group_by(across(input$var_select) ) %>% summarise(ltv=sum(LTV,na.rm = TRUE) ) %>% arrange(-ltv) %>% mutate(porcentaje=round(ltv/sum(ltv),4)*100 )
+
+})
+
+```
+
+</div>
+
+<div style="float: right; width: 45%;">
+
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+
+renderPlot({
+
+tab1<-datos %>% group_by(across(input$var_select) ) %>% summarise(ltv=sum(LTV,na.rm = TRUE)) %>% arrange(-ltv)
+names(tab1)<-c("variable","ltv")
+ggplot(data = tab1, aes(x = reorder(variable,-ltv),y=ltv)) + geom_bar(stat="identity", fill="#2596be")+ggtitle(paste("Cantidad de LTV por",input$var_select) )+labs(x=input$var_select,y="ltv") +theme_excel_new() + scale_colour_excel_new()
+})
+
+```
+
+</div>
+
+
+## Analisis numerico
+
+
+```{r message=FALSE, warning=FALSE}
+
+tabla1<-datos %>% select(-Id,-dia)  %>% select_if(is.numeric)
+kable(describe(tabla1, IQR=FALSE,skew = FALSE,quant=c(0.50,1), ranges = FALSE),digits=3)
+
+```
+
+## Correlacion
+
+```{r message=FALSE,warning=FALSE}
+library(corrplot)
+corrplot(cor(tabla1 %>% filter(LTV!=0)), method = "number")
+```
+
+
+## Tabla de contingencia: Interes de compra (Columnas)
+
+#### Persona juridica vs interes de compra
+
+<div style="float: left; width: 50%; height: 20%;">
+
+```{r fig.width=3, fig.height=3}
+
+kable( round(prop.table(table(datos$`Persona Juridica`,datos$`Interes de Compra`)),4)*100)
+
+```
+
+</div>
+
+<div style="float: right; width: 50%; height: 20%;">
+
+#### Solicita ayuda vs interes de compra
+
+```{r fig.width=3, fig.height=3}
+
+kable(round(prop.table(table(datos$`Solicita Ayuda`,datos$`Interes de Compra`)),4)*100)
+
+```
+
+</div>
+
+<div style="float: left; width: 50%;">
+
+#### Ubicación vs interes de compra
+
+```{r fig.width=3, fig.height=3}
+
+kable( round(prop.table(table(datos$Ubicación,datos$`Interes de Compra`)),4)*100)
+
+#kable(table(datos$Contacto_Inicial,datos$`Interes de Compra`))
+
+```
+
+</div>
+
+<div style="float: right; width: 50%;">
+
+#### Canal de adquisicion vs interes de compra 
+
+```{r fig.width=3, fig.height=3}
+
+kable( round(prop.table(table(datos$`Canal Adquisicion`,datos$`Interes de Compra`)),4)*100)
+
+```
+
+</div>
+
+## Tabla de contingencia: Interes de compra (Columnas)
+
+### Contacto inicial vs interes de compra
+
+<div style="float: left; width: 50%; height: 20%;">
+
+```{r warning=FALSE,message=FALSE, results='asis'}
+
+kable(round(prop.table(table(datos$`Contacto Inicial`,datos$`Interes de Compra`)),4)*100)
+
+```
+
+</div>
+
+### Dominio del correo vs interes de compra
+
+<div style="float: right; width: 50%;">
+
+```{r }
+
+kable(round(prop.table(table(datos$`Dominio Correo`,datos$`Interes de Compra`)),4)*100)
+
+```
+
+</div>
+
+## Interes de compra vs todos los atributo numerico
+
+
+<div style="float: left; width: 80%;">
+
+</div>
+
+<div style="float: left; width: 55%;">
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+
+selectInput("var_select2", label = "Seleccione Atributo:",
+              choices = names(datos[c(6,7,9,10,11)]), selected = names(datos[c(9)]))
+
+renderTable({
+#across(input$var_select)
+  #across(input$var_selet2)
+datos %>% group_by(`Interes de Compra` ) %>% summarise(variable=sum(across(input$var_select2),na.rm = TRUE) ) %>% arrange(-variable) %>% mutate(porcentaje=round(variable/sum(variable),4)*100)
+
+})
+
+
+```
+
+</div>
+
+<div style="float: right; width: 45%;">
+
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+
+renderPlot({
+
+tab1<-datos %>% group_by(`Interes de Compra` ) %>% summarise(variable=sum(across(input$var_select2),na.rm = TRUE) ) %>% arrange(-variable)
+names(tab1)<-c("interes","variable")
+ggplot(data = tab1, aes(x = reorder(interes,-variable),y=variable)) + geom_bar(stat="identity", fill="#2596be")+ggtitle(paste("Interes por la  Cantidad de",input$var_select2) )+labs(x="Interes de compra",y=input$var_select2) +theme_excel_new() + scale_colour_excel_new()
+})
+
+```
+
+</div>
+
+## Hallazgo
+
+### LTV
+
+La ubicacion es mayor cantidad de empresas en la zona rural, pero donde existe mayor LTV es el la zona Urbano en la mayoria de meses existe mayor LTV en Urbano salvo en diciembre y enero donde gana por muy poco.
+
+> LTV aporta mas en Noviembre y menos en Agosto y diciembre
+
+> LTV es mayor notablemente en todos los meses del año para las personas naturales (No juridica)
+
+> El dominio con mayor LTV  es hotmail y Corporativo, mientras el que tiene menos es Yahoo y outlook
+
+> sin contacto inicial tiene mejor LTV con el 64.91% 
+
+> Las PYMES que No solicitan ayuda tiene mejor LTV con el 76.32% 
+
+
+
+ Análisis del negocios | Metricas e indicadores
+========================================================
+
+
+## Perfil de la empresa
+
+Hola! soy Mario, soy tu mejor cliente promedio, vivo en la zona Urbana
+
+![](http://drive.google.com/uc?export=view&id=1HwwX3KpGs4vMq6-kqr_os0bfO_qLZ_jx){width='100px'}
+
+he llegado por el cana de tradicional, mi pyme es Persona natural (No juridica)
+
+mi cuenta de correo es Hotmail, no he tenido contacto inicial y soy de los que no piden ayuda
+
+me gusta visitar el blog y descargar reporte, odio crear usuarios adicionales
+
+
+
+## Calculo Metricas
+
+
+```{r}
+library(tidyr)
+
+tab20<-datos %>% group_by(mes) %>% summarise(user_new=n(),activo=sum(`Interes de Compra`!="Si") ) %>% mutate(total_activo=cumsum(activo)) %>% mutate(conversion= round(activo/user_new,4)*100 ) %>% mutate(retencion=round((total_activo-user_new)/lag(total_activo),4)*100 ) %>% mutate(churn=100-retencion) %>% mutate(lifetime=1/churn)
+
+kable(tab20)
+
+
+```
+
+
+## Calculo Metricas
+
+Hola a todos soy Maria y trabajo en ContabilidadAPP como Data analyst, le contare que hicimos
+
+![](http://drive.google.com/uc?export=view&id=1xw9eMLtuVMgMEpLU85mlAcC1g4zMCbub){width='100px'}
+
+Primero contamos cuantos clientes nuevo tenemos cada mes, adicional sabemos cuantos clientes tienen interes en comprar o compraron (Activo), el acumulado de los clientes nuevo (Total_activo).
+
+La conversion es dividir la cantidad de suscrito entre los usuario de ese mes.
+
+ahora lo interesante es Retencion, como cada mes tiene clientes unico y no se repiten eso mismo cliente en el resto de meses, para saber si se retiene se debe tener el acumulado de suscrito y restarle los clientes nuevo de cada mes y dividirlo entre los usuario suscrito acumulado del mes anterior.
+
+¡hemos creado informacion que se puede graficar!
+
+## Evolucion: Conversion
+
+```{r}
+
+dumbbell_chart(
+  data = tab20,
+  x = mes,
+  y1 = user_new,
+  y2 = activo,
+  legend_labels = c("suscrito", "clientes total")
+  
+) +
+  labs(
+    x = NULL,
+    y = "user",
+    title = "Total de usaurio nuevo vs con suscripcion por mes"
+  ) +
+  scale_y_continuous(
+    limits = c(2000, NA),
+    labels = function(x) paste(x, "user")
+  )
+
+```
+
+## Analisis de Retencion
+
+<div style="float: left; width: 100%;">
+
+### Total de conversion por mes
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+
+library(googleVis)
+op <- options(gvis.plot.tag='chart')
+linea2<- gvisLineChart(tab20[c("mes","conversion")])
+plot(linea2)
+
+
+```
+
+</div>
+
+<div style="float: left; width: 100%;">
+
+### Total de retencion por mes
+
+```{r message=FALSE,warning=FALSE, results='asis'}
+
+library(googleVis)
+
+op <- options(gvis.plot.tag='chart')
+linea2<- gvisLineChart(tab20[c("mes","retencion")])
+plot(linea2)
+
+```
+
+</div>
+
+## Analisis de Retencion
+
+Maria ¿Nos puede explicar?
+
+![](http://drive.google.com/uc?export=view&id=1xw9eMLtuVMgMEpLU85mlAcC1g4zMCbub){width='100px'}
+
+Por supuesto, Octubre y Diciembre los meses con peor conversion, ahi debemos mejorar o verificar a nivel operacional que ocurre en esos meses
+
+La retencion parece que desde Abril tomar una tendencia por arriba del 98%, aun asi tener 2% de Churn rate anual significa perder una gran cantidad de clientes al año.
+¡Equipo, vamos bien!
+
+## Conversion anual
+
+<div style="float: left; width: 40%;">
+
+![](http://drive.google.com/uc?export=view&id=1xw9eMLtuVMgMEpLU85mlAcC1g4zMCbub){width='100px'}
+
+La tasa de conversion anual es la suma de todos los usuario suscrito al año entre el total de usuario al año, dando 91.07%, el porcentaje de abandono es el complemento.
+En un modelo de negocio de suscripcion un 91% es aceptable
+
+  
+</div>
+  
+<div style="float: right; width: 60%;">
+
+### Conversion y abandono de todo el año
+
+```{r echo=FALSE, message=FALSE, results='asis'}
+
+df1=data.frame(tasa=c("Conversion","Abandono"), 
+             val1=c( round((sum(tab20$activo)/sum(tab20$user_new))*100,2),100-round((sum(tab20$activo)/sum(tab20$user_new))*100,2)) )
+
+library(googleVis)
+op <- options(gvis.plot.tag='chart')
+Gauge<- gvisGauge(df1, 
+                    options=list(min=0, max=100, greenFrom=70,
+                                 greenTo=100, yellowFrom=35, yellowTo=70,
+                                 redFrom=0, redTo=35, width=400, height=300))
+plot(Gauge)
+```
+
+
+## conclusiones
+
+Les dare algunas conclusiones adicional a las ya mencionadas
+
+![](http://drive.google.com/uc?export=view&id=1xw9eMLtuVMgMEpLU85mlAcC1g4zMCbub){width='100px'}
+
++ LTV no esta relacionado con ninguna otra variable numerica como facturas creadas, visitas al blog, usuarios adicionales y reporte descargado
+
++ Esas variable que mencione su mediana es cero, significa que por lo menos la mitad de los datos es cero, por lo tanto muchos cliente anotaron cero.
+
+## conclusiones
+
+Para mejorar la tasa de conversion se debe tener claro las necesidades del cliente, una manera de lograrlo es mediante contraste, es decir,  creando un Perfil "Ideal" en este caso tenemos el Perfil de Mario.
+
+Hay dos formas de tratarlo, una es enfocarse en conseguir clientes tipo Mario (Nos dejara un alto nivel de LTV y conversion).
+
+Otra es enfocar las energias en todo lo que no representa a Mario para mejorar la conversion. Ejemplo el Canal Tradicional tiene el 100% del interes de compra, se puede fortalecer los canales alternativo, Mario es persona natural (No juridico) entonces hay que enfocarse en los juridicos. 
+
+Ahora luego de describir lo que se observa y sus acciones, daremos una recomendaciones escalable 
+
+
+Recomendaciones para una segunda fase
+========================================================
+
+## Crear un sistema de retencion
+
+Es necesario incorporar nuevos atributo como fecha de pago y monto pagado o plan.
+
+### Lead Scoring
+
+permite calificar el usuario para identificar la probabilidad que la persona suscriba
+
+###  Lead Nurturing
+
+Alimentar a los leads para acercarlos a ese momento de la suscripcion
+
+
+### analisis Inferencial clasico
+
+Se puede continuar realizando el estudio con un enfoque inferencial y de pronostico
+Se podria aplicar regresion logistica y tecnicas de clasificacion clasica o el uso de Machine learning.
+
+## Escalibilidad
+
+Lo mencionado anteriormente como tener un perfil ideal como el de Mario o en un futuro aplicar un Lead Scoring o tecnica inferencial permite enfocar los recursos humano donde realmente importa asi optimizar nuestro recurso humano.
+
+## Recomendacion Cualitativa
+
+### Realizar sesiones de onboarding proactivo
+
+### Más importante para mejorar nuestra retención, es entender primero porque nuestros clientes se van.
+
+
+Detras de Camara -Como se hizo
+========================================================
+
+## Base de datos
+
+![](http://drive.google.com/uc?export=view&id=1xw9eMLtuVMgMEpLU85mlAcC1g4zMCbub){width='100px'}
+
+Se tiene una tabla principal con 36228 registro, mientras que LTV tiene 3791 registro, en ambas tabla tienen valores duplicado por lo cual se procede a solucionar el problema
+
+```{r eval=FALSE, echo=TRUE}
+
+datos_ltv<-datos_ltv %>% group_by(Id) %>% summarise(LTV=median(LTV))
+df<-df[!duplicated(df$Id), ]
+
+```
+
+En el caso de LTV se agrupa por Id y se calcula la mediana (para evitar sesgo), en el caso de los duplicado de la tabla inicial se considera que el primer registro es el original y el restante se debe eliminar.
+
+## Tecnologia
+
+![](http://drive.google.com/uc?export=view&id=1xw9eMLtuVMgMEpLU85mlAcC1g4zMCbub){width='100px'}
+
+Mi equipo de contabilidadAPP decidio usar Shiny (R) 
+
+### Las ventajas son las siguientes
+
+
++ Es dinamico,la presentacion se puede cambiar en tiempo real tipo de grafico, atributo...
+
++ Se puede combinar con css, html y javascript 
+
++ Se puede programar proceso ETL en un solo lugar 
+
++ Es escalable
+
+### Desventaja
+
+#### programar un grafico de cero la curva de tiempo es larga
+
+#### Poca documentacion
